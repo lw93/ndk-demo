@@ -1,0 +1,163 @@
+apply plugin: 'com.android.application'
+
+android {
+    compileSdkVersion 27
+    buildToolsVersion '27.0.3'
+    defaultConfig {
+        applicationId "com.xygit.ndk.demo"
+        minSdkVersion 14
+        targetSdkVersion 27
+        versionCode 1
+        versionName "1.0"
+        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+        externalNativeBuild {
+            cmake {
+                // Sets optional flags for the C compiler.
+                cFlags ""
+                // Sets a flag to enable format macro constants for the C++ compiler.
+                cppFlags ""
+                //指定需要编译的cpu架构
+                abiFilters "armeabi"
+                //这里指定只编译 native-lib 模块
+                // targets "native-lib"
+            }
+        }
+    }
+    flavorDimensions "default"
+
+    signingConfigs {
+        base {
+            storeFile file('ndkav')
+            keyAlias 'android_apk'
+            keyPassword 'zhuyingsong'
+            storePassword 'zhuyingsong'
+            v1SigningEnabled true
+            v2SigningEnabled true
+        }
+        special {
+            storeFile file('ndk_av.jks')
+            keyAlias 'suishenchailv_zhongyouruifei'
+            keyPassword 'wzxOecM222l7'
+            storePassword 'dJBM9Ap2Zvps'
+            v1SigningEnabled true
+            v2SigningEnabled true
+        }
+    }
+
+    /*
+    以下一般为默认属性即可:
+    debuggable: debug模式默认为true, release模式默认是false
+
+    jniDebuggable: debug模式与release模式默认都是false
+
+    renderscriptDebuggable: debug模式与release模式默认都是false
+    */
+
+    buildTypes {
+        debug {
+            debuggable true
+            jniDebuggable true
+            minifyEnabled false
+            shrinkResources false
+            multiDexEnabled true
+            // 开启ZipAlign优化
+            zipAlignEnabled true
+            //为已经存在的applicationId添加后缀
+            applicationIdSuffix ".debug"
+            // 为版本名添加后缀
+            versionNameSuffix "-debug"
+            externalNativeBuild {
+                cmake {
+                    // Sets optional flags for the C compiler.
+                    cFlags "-DDebug"
+                    // Sets a flag to enable format macro constants for the C++ compiler.
+                    cppFlags "-DDebug"
+                }
+            }
+//            manifestPlaceholders = [app_name: "V视-测试版"]
+            resValue "string", "app_name", "V视-测试版"
+        }
+        release {
+            debuggable false
+            minifyEnabled true
+            shrinkResources true
+            multiDexEnabled true
+            // 开启ZipAlign优化
+            zipAlignEnabled true
+            signingConfig signingConfigs.base
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            externalNativeBuild {
+                cmake {
+                    // Sets optional flags for the C compiler.
+                    cFlags ""
+                    // Sets a flag to enable format macro constants for the C++ compiler.
+                    cppFlags ""
+                }
+            }
+//            manifestPlaceholders = [app_name: "V视-正式版"]
+            resValue "string", "app_name", "V视-正式版"
+        }
+
+    }
+    sourceSets {
+        main {
+            jni.srcDirs = ['src/main/cpp']
+            jniLibs.srcDirs = ['src/main/jniLibs']
+        }
+    }
+
+    applicationVariants.all { variant ->
+        variant.outputs.all {
+            if (outputFileName.endsWith(".apk")) {
+                if ("" != variant.flavorName) {
+                    outputFileName = "${variant.versionName}_${variant.flavorName}.apk"
+                } else {
+                    outputFileName = "${variant.versionName}.apk"
+                }
+            }
+        }
+    }
+
+    externalNativeBuild {
+        cmake {
+            path "CMakeLists.txt"
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_7
+        targetCompatibility JavaVersion.VERSION_1_7
+    }
+    packagingOptions {
+        exclude 'META-INF/license.txt'
+    }
+    lintOptions {
+        abortOnError false
+    }
+
+    dexOptions {
+//        preDexLibraries true
+        dexInProcess = false
+        javaMaxHeapSize "3g"
+    }
+//临时禁用严格图片检查
+    aaptOptions.cruncherEnabled = false
+    aaptOptions.useNewCruncher = false
+}
+
+dependencies {
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
+    implementation 'com.android.support:appcompat-v7:27.1.1'
+    implementation 'com.android.support.constraint:constraint-layout:1.0.2'
+    testImplementation 'junit:junit:4.12'
+    androidTestImplementation 'com.android.support.test:runner:1.0.2'
+    androidTestImplementation 'com.android.support.test.espresso:espresso-core:2.2.2'
+    //ReLinker 替代 System.loadLibrary("native");
+    implementation 'com.getkeepsafe.relinker:relinker:1.3.0'
+    //ijkplayer库
+    implementation 'tv.danmaku.ijk.media:ijkplayer-java:0.8.8'
+    implementation 'tv.danmaku.ijk.media:ijkplayer-armv7a:0.8.8'
+    //文件选择器库
+    implementation 'com.github.angads25:filepicker:1.1.1'
+    implementation project(path: ':breakpad')
+}
